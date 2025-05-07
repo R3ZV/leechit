@@ -1,4 +1,4 @@
-package bencode;
+package torrent;
 
 public class Decoder {
     int pos;
@@ -11,7 +11,7 @@ public class Decoder {
 
     public String next() {
         if (this.pos >= this.content.length()) {
-            throw new RuntimeException("EOF");
+            return "EEOF";
         }
 
         // first values in strings is the len
@@ -31,6 +31,7 @@ public class Decoder {
         }
 
         int len = Integer.parseInt(content.substring(this.pos, colIdx));
+        this.pos += colIdx + len + 1;
         return this.content.substring(colIdx + 1, colIdx + 1 + len);
     }
 
@@ -40,6 +41,7 @@ public class Decoder {
             colIdx++;
         }
 
+        this.pos += colIdx + 1;
         return this.content.substring(this.pos + 1, colIdx);
     }
 }

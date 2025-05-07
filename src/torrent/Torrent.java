@@ -1,0 +1,33 @@
+package torrent;
+
+import java.util.ArrayList;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+public class Torrent extends Decoder {
+    String name;
+    ArrayList<File> files;
+
+    public Torrent(String path, String content) {
+        super(content);
+        this.name = this.extractName(path);
+
+        files = new ArrayList<>();
+        String file = new String();
+        while (file != "EEOF") {
+            file = this.next();
+            files.add(new File(file.length(), file, file));
+        }
+    }
+
+    String extractName(String pathStr) {
+        Path path = Paths.get(pathStr);
+        String fileName = path.getFileName().toString();
+        return fileName;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+}
