@@ -6,9 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Torrent extends Decoder {
-    String name;
-    // TODO: change to orderedset
-    ArrayList<File> files;
+    private String name;
+    private ArrayList<File> files;
 
     public Torrent(String path, String content) {
         super(content);
@@ -22,7 +21,7 @@ public class Torrent extends Decoder {
         }
     }
 
-    String extractName(String pathStr) {
+    private String extractName(String pathStr) {
         Path path = Paths.get(pathStr);
         String fileName = path.getFileName().toString();
         return fileName;

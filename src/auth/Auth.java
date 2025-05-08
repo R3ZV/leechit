@@ -4,7 +4,7 @@ import java.util.HashMap;
 import user.User;
 
 public class Auth {
-    HashMap<String, User> users;
+    private HashMap<String, User> users;
 
     public Auth() {
         this.users = new HashMap<>();

@@ -1,12 +1,12 @@
 package user;
 
 public class User {
-    String username;
-    String password;
+    private String username;
+    private String password;
 
     public User(String name, String pass) {
-        username = name;
-        password = pass;
+        this.username = name;
+        this.password = pass;
     }
 
     public String getUsername() {

@@ -9,14 +9,14 @@ import user.User;
 import auth.Auth;
 
 public class Repl implements ReplService {
-    boolean running;
-    Console console;
-    String command;
-    String[] commandArgs;
+    private boolean running;
+    private Console console;
+    private String command;
+    private String[] commandArgs;
 
-    User user;
-    Auth auth;
-    Registry registry;
+    private User user;
+    private Auth auth;
+    private Registry registry;
 
     public Repl() {
         this.running = true;
@@ -109,21 +109,22 @@ public class Repl implements ReplService {
         }
     }
 
-    void exit() {
+    private void exit() {
         this.running = false;
         System.out.println("Thank you for using Leech it!");
     }
 
-    void download() {
+    private void download() {
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
-        System.out.println("TODO\n");
+        String torrentName = this.commandArgs[0];
+        this.registry.downloadTorrent(torrentName);
     }
 
-    void upload() {
+    private void upload() {
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -135,11 +136,11 @@ public class Repl implements ReplService {
         this.registry.addPost(this.user, filePath);
     }
 
-    void registry() {
+    private void registry() {
         this.registry.showPosts();
     }
 
-    void inspect() {
+    private void inspect() {
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -150,7 +151,7 @@ public class Repl implements ReplService {
         this.registry.displayTorrent(torrentName);
     }
 
-    void remove() {
+    private void remove() {
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -161,7 +162,7 @@ public class Repl implements ReplService {
         this.registry.removeTorrent(this.user, torrentName);
     }
 
-    void login() {
+    private void login() {
         if (this.user != null) {
             System.out.println("You are already logged in!");
             return;
@@ -179,7 +180,7 @@ public class Repl implements ReplService {
         }
     }
 
-    void register() {
+    private void register() {
         if (this.user != null) {
             System.out.println("You are already logged in!");
             return;
@@ -196,11 +197,11 @@ public class Repl implements ReplService {
         System.out.println("Account created successfully!");
     }
 
-    void logout() {
+    private void logout() {
         this.user = null;
     }
 
-    void help() {
+    private void help() {
         System.out.println("REPL commands:");
         System.out.println("  help                  - prints this message");
         System.out.println("  login                 - login into your account");

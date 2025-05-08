@@ -1,15 +1,15 @@
 package torrent;
 
 public class Decoder {
-    int pos;
-    String content;
+    protected int pos;
+    protected String content;
 
     public Decoder(String content) {
         this.pos = 0;
         this.content = content;
     }
 
-    public String next() {
+    protected String next() {
         if (this.pos >= this.content.length()) {
             return "EEOF";
         }
@@ -24,7 +24,7 @@ public class Decoder {
         throw new RuntimeException("Unsupported content found at pos: " + this.pos);
     }
 
-    String parseString() {
+    private String parseString() {
         int colIdx = this.pos;
         while (this.content.charAt(colIdx) != ':') {
             colIdx++;
@@ -35,7 +35,7 @@ public class Decoder {
         return this.content.substring(colIdx + 1, colIdx + 1 + len);
     }
 
-    String parseNumber() {
+    private String parseNumber() {
         int colIdx = this.pos;
         while (this.content.charAt(colIdx) != 'e') {
             colIdx++;

@@ -6,16 +6,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.nio.file.*;
 
 import torrent.Torrent;
+import torrent.File;
 import user.User;
 
 public class Registry {
-    ArrayList<Post> posts;
+    private Set<Post> posts;
 
     public Registry() {
-        this.posts = new ArrayList<>();
+        this.posts = new TreeSet<>();
 
         // TODO: delete after we use a db
         User jon = new User("Jon", "1234");
@@ -41,15 +44,15 @@ public class Registry {
         System.out.println(String.format("%-25s %-15s %s", "Torrent name", "Author", "Timestamp"));
         System.out.println("");
 
-        for (int i = 0; i < posts.size(); i++) {
-            posts.get(i).display();
+        for (Post post : this.posts) {
+            post.display();
         }
     }
 
     public void displayTorrent(String name) {
-        for (int i = 0; i < posts.size(); i++) {
-            if (posts.get(i).getName().equals(name)) {
-                posts.get(i).torrentContents();
+        for (Post post : this.posts) {
+            if (post.getName().equals(name)) {
+                post.torrentContents();
                 return;
             }
         }
@@ -57,17 +60,51 @@ public class Registry {
     }
 
     public void removeTorrent(User user, String torrentName) {
-        for (int i = 0; i < posts.size(); i++) {
-            if (posts.get(i).getName().equals(torrentName)) {
-                if (!posts.get(i).getAuthor().equals(user.getUsername())) {
+        for (Post post : posts) {
+            if (post.getName().equals(torrentName)) {
+                if (!post.getAuthor().equals(user.getUsername())) {
                     System.out.println("You don't own that torrent!");
                 } else {
-                    posts.remove(i);
+                    posts.remove(post);
                     System.out.println("Successfully removed torrent!");
                 }
                 return;
             }
         }
         System.out.println("Couldn't find: " + torrentName);
+    }
+
+    public void downloadTorrent(String name) {
+        for (Post post : this.posts) {
+            if (post.getName().equals(name)) {
+                this.download(post);
+                return;
+            }
+        }
+        System.out.println("Couldn't find: " + name);
+    }
+
+    private void download(Post post) {
+        ArrayList<File> files = post.getTorrent().getFiles();
+        Path downloadDir = Paths.get("downloads");
+
+        try {
+            if (!Files.exists(downloadDir)) {
+                Files.createDirectory(downloadDir);
+            }
+
+            // Loop through the file names and create empty files
+            for (File file : files) {
+                Path filePath = downloadDir.resolve(file.getName());
+                Files.createFile(filePath);
+                System.out.println("Downloaded: " + filePath);
+            }
+
+        } catch (FileAlreadyExistsException e) {
+            System.out.println("File already exists: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("I/O error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
