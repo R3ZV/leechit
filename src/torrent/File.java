@@ -10,4 +10,9 @@ public class File {
         this.name = name;
         this.path = path;
     }
+
+    public void display() {
+        String fmt = String.format("%-25d %-15s %s", this.size,  this.name, this.path);
+        System.out.println(fmt);
+    }
 }

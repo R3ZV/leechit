@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 
 public class Torrent extends Decoder {
     String name;
+    // TODO: change to orderedset
     ArrayList<File> files;
 
     public Torrent(String path, String content) {
@@ -14,10 +15,10 @@ public class Torrent extends Decoder {
         this.name = this.extractName(path);
 
         files = new ArrayList<>();
-        String file = new String();
-        while (file != "EEOF") {
-            file = this.next();
+        String file = this.next();
+        while (!file.equals("EEOF")) {
             files.add(new File(file.length(), file, file));
+            file = this.next();
         }
     }
 
@@ -25,6 +26,10 @@ public class Torrent extends Decoder {
         Path path = Paths.get(pathStr);
         String fileName = path.getFileName().toString();
         return fileName;
+    }
+
+    public ArrayList<File> getFiles() {
+        return this.files;
     }
 
     public String getName() {

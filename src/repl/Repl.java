@@ -8,7 +8,7 @@ import torrent.Torrent;
 import user.User;
 import auth.Auth;
 
-public class Repl {
+public class Repl implements ReplService {
     boolean running;
     Console console;
     String command;
@@ -31,10 +31,26 @@ public class Repl {
         this.registry = new Registry();
     }
 
+    @Override
     public boolean isRunning() {
         return this.running;
     }
 
+    @Override
+    public void welcome() {
+        System.out.println("Welcome to");
+        System.out.println("  _                   _       ___ _   ");
+        System.out.println(" | |    ___  ___  ___| |__   |_ _| |_ ");
+        System.out.println(" | |   / _ \\/ _ \\/ __| '_ \\   | || __|");
+        System.out.println(" | |__|  __/  __/ (__| | | |  | || |_ ");
+        System.out.println(" |_____\\___|\\___|\\___|_| |_| |___|\\__|");
+        System.out.println("                                      ");
+
+        System.out.println("Type 'help' for available commands!");
+    }
+
+
+    @Override
     public void readCommand() {
         String format = "> ";
         if (this.user != null) {
@@ -46,6 +62,7 @@ public class Repl {
         this.commandArgs = Arrays.copyOfRange(args, 1, args.length);
     }
 
+    @Override
     public void execCommand() {
         /// USER commands
         if (this.user != null) {
@@ -77,6 +94,12 @@ public class Repl {
             case "register":
                 register();
                 break;
+            case "inspect":
+                inspect();
+                break;
+            case "remove":
+                remove();
+                break;
             case "exit":
                 exit();
                 break;
@@ -92,6 +115,11 @@ public class Repl {
     }
 
     void download() {
+        if (this.commandArgs.length < 1) {
+            System.out.println("Invalid number of arguments!");
+            System.out.println("Type 'help' to learn more!");
+            return;
+        }
         System.out.println("TODO\n");
     }
 
@@ -104,19 +132,41 @@ public class Repl {
 
         String filePath = this.commandArgs[0];
         System.out.println(String.format("Uploading '%s'...", filePath));
-        this.registry.addTorrent(filePath);
+        this.registry.addPost(this.user, filePath);
     }
 
     void registry() {
-        System.out.println("Torrents:");
+        this.registry.showPosts();
+    }
 
-        ArrayList<Torrent> torrents = registry.getTorrents();
-        for (int i = 0; i < torrents.size(); i++) {
-            System.out.println(String.format("[%d]: %s", i, torrents.get(i).getName()));
+    void inspect() {
+        if (this.commandArgs.length < 1) {
+            System.out.println("Invalid number of arguments!");
+            System.out.println("Type 'help' to learn more!");
+            return;
         }
+
+        String torrentName = this.commandArgs[0];
+        this.registry.displayTorrent(torrentName);
+    }
+
+    void remove() {
+        if (this.commandArgs.length < 1) {
+            System.out.println("Invalid number of arguments!");
+            System.out.println("Type 'help' to learn more!");
+            return;
+        }
+
+        String torrentName = this.commandArgs[0];
+        this.registry.removeTorrent(this.user, torrentName);
     }
 
     void login() {
+        if (this.user != null) {
+            System.out.println("You are already logged in!");
+            return;
+        }
+
         String username = this.console.readLine("Username: ");
         char[] passChars = this.console.readPassword("Password: ");
         String password = new String(passChars);
@@ -130,6 +180,11 @@ public class Repl {
     }
 
     void register() {
+        if (this.user != null) {
+            System.out.println("You are already logged in!");
+            return;
+        }
+
         String username = this.console.readLine("Username: ");
         char[] passChars = this.console.readPassword("Password: ");
         char[] confirmPassChars = this.console.readPassword("Confirm password: ");
@@ -145,18 +200,6 @@ public class Repl {
         this.user = null;
     }
 
-    public void welcome() {
-        System.out.println("Welcome to");
-        System.out.println("  _                   _       ___ _   ");
-        System.out.println(" | |    ___  ___  ___| |__   |_ _| |_ ");
-        System.out.println(" | |   / _ \\/ _ \\/ __| '_ \\   | || __|");
-        System.out.println(" | |__|  __/  __/ (__| | | |  | || |_ ");
-        System.out.println(" |_____\\___|\\___|\\___|_| |_| |___|\\__|");
-        System.out.println("                                      ");
-
-        System.out.println("Type 'help' for available commands!");
-    }
-
     void help() {
         System.out.println("REPL commands:");
         System.out.println("  help                  - prints this message");
@@ -169,6 +212,8 @@ public class Repl {
             System.out.println("USER commands:");
             System.out.println("  download <torrent>    - download a torrent from registry");
             System.out.println("  upload <torrent>      - upload a torrent to the registry");
+            System.out.println("  inspect <torrent>     - inspect what a torrent contains");
+            System.out.println("  remove <torrent>      - removes torrent form registry");
             System.out.println("  registry              - print available files in the registry");
             System.out.println("  logout                - logs out the user if logged in");
         }
