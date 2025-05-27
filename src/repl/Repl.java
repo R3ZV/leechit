@@ -1,12 +1,14 @@
 package repl;
 
 import java.io.Console;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.ArrayList;
 import registry.Registry;
 import torrent.Torrent;
 import user.User;
 import auth.Auth;
+import audit.Audit;
 
 public class Repl implements ReplService {
     private boolean running;
@@ -17,6 +19,7 @@ public class Repl implements ReplService {
     private User user;
     private Auth auth;
     private Registry registry;
+    private Audit auditManager;
 
     public Repl() {
         this.running = true;
@@ -29,6 +32,7 @@ public class Repl implements ReplService {
         this.user = null;
         this.auth = new Auth();
         this.registry = new Registry();
+        this.auditManager = new Audit("audit.csv");
     }
 
     @Override
@@ -110,11 +114,13 @@ public class Repl implements ReplService {
     }
 
     private void exit() {
+        this.auditManager.log("User exited", Instant.now().toEpochMilli());
         this.running = false;
         System.out.println("Thank you for using Leech it!");
     }
 
     private void download() {
+        this.auditManager.log("User started downloading", Instant.now().toEpochMilli());
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -125,6 +131,7 @@ public class Repl implements ReplService {
     }
 
     private void upload() {
+        this.auditManager.log("User uploaded", Instant.now().toEpochMilli());
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -137,10 +144,12 @@ public class Repl implements ReplService {
     }
 
     private void registry() {
+        this.auditManager.log("User logged the registry", Instant.now().toEpochMilli());
         this.registry.showPosts();
     }
 
     private void inspect() {
+        this.auditManager.log("User inspected the registry", Instant.now().toEpochMilli());
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -152,6 +161,7 @@ public class Repl implements ReplService {
     }
 
     private void remove() {
+        this.auditManager.log("User removed from the registry", Instant.now().toEpochMilli());
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
@@ -164,6 +174,7 @@ public class Repl implements ReplService {
 
     private void login() {
         if (this.user != null) {
+            this.auditManager.log("User tried to log in but is already logged in", Instant.now().toEpochMilli());
             System.out.println("You are already logged in!");
             return;
         }
@@ -175,13 +186,16 @@ public class Repl implements ReplService {
         if (this.auth.isUser(username, password)) {
             this.user = this.auth.getUser(username);
             System.out.println("Logged in successfully!");
+            this.auditManager.log("User logged in", Instant.now().toEpochMilli());
         } else {
+            this.auditManager.log("User failed to log in", Instant.now().toEpochMilli());
             System.out.println("Incorrect username / password!");
         }
     }
 
     private void register() {
         if (this.user != null) {
+            this.auditManager.log("User tried to register but is already logged in", Instant.now().toEpochMilli());
             System.out.println("You are already logged in!");
             return;
         }
@@ -190,18 +204,23 @@ public class Repl implements ReplService {
         char[] passChars = this.console.readPassword("Password: ");
         char[] confirmPassChars = this.console.readPassword("Confirm password: ");
         if (!Arrays.equals(passChars, confirmPassChars)) {
+            this.auditManager.log("User registered with wrong confirm pass", Instant.now().toEpochMilli());
             System.out.println("Password don't match, try again!");
             return;
         }
         this.auth.addUser(username, new String(passChars));
         System.out.println("Account created successfully!");
+        this.auditManager.log("User registered", Instant.now().toEpochMilli());
     }
 
     private void logout() {
+        this.auditManager.log("User logged out", Instant.now().toEpochMilli());
         this.user = null;
     }
 
     private void help() {
+        this.auditManager.log("User asked for help", Instant.now().toEpochMilli());
+
         System.out.println("REPL commands:");
         System.out.println("  help                  - prints this message");
         System.out.println("  login                 - login into your account");
