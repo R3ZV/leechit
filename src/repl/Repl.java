@@ -169,7 +169,7 @@ public class Repl implements ReplService {
         }
 
         String torrentName = this.commandArgs[0];
-        this.registry.removeTorrent(this.user, torrentName);
+        this.registry.removeTorrentPost(this.user, torrentName);
     }
 
     private void login() {

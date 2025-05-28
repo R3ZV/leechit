@@ -17,6 +17,7 @@ public class Post implements Comparable<Post> {
         this.author = author;
         this.id = id;
         this.torrent = torrent;
+        this.timestamp = timestamp;
 
         // TODO:
         // LocalDateTime now = LocalDateTime.now();
@@ -47,6 +48,10 @@ public class Post implements Comparable<Post> {
 
     public String getName() {
         return this.torrent.getName();
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public String getTimestamp() {

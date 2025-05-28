@@ -31,15 +31,18 @@ public class Registry {
             Database db = Database.getInstance();
             Torrent torrent = new Torrent(path, content);
 
-            int id = db.insertTorrent(torrent);
-            if (id == -1) {
+            int torrentId = db.insertTorrent(torrent);
+            if (torrentId == -1) {
                 throw new RuntimeException("Couldn't insert given torrent file!");
             }
 
-            db.insertFiles(torrent.getFiles());
-            db.insertTorrentFiles(id, torrent.getFiles());
+            ArrayList<File> files = torrent.getFiles();
+            db.insertFiles(files);
+            // after insert files should be changed to have their generated ids
 
-            db.insertPost(new Post(user, torrent));
+            db.insertTorrentFiles(torrentId, files);
+
+            db.insertPost(user.getId(), torrentId);
             this.posts = db.getAllPosts();
         } catch (IOException e) {
             System.out.println("Couldn't read torrent file!");
@@ -66,13 +69,15 @@ public class Registry {
         System.out.println("Couldn't find: " + name);
     }
 
-    public void removeTorrent(User user, String torrentName) {
+    public void removeTorrentPost(User user, String torrentName) {
         for (Post post : posts) {
             if (post.getName().equals(torrentName)) {
                 if (!post.getAuthor().equals(user.getUsername())) {
                     System.out.println("You don't own that torrent!");
                 } else {
-                    posts.remove(post);
+                    Database db = Database.getInstance();
+                    db.removePost(post.getId());
+                    this.posts = db.getAllPosts();
                     System.out.println("Successfully removed torrent!");
                 }
                 return;

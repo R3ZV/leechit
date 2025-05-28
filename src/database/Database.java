@@ -2,12 +2,15 @@ package database;
 
 import java.sql.*;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 
 import constants.Constants;
 import user.User;
 import torrent.Torrent;
 import torrent.File;
+import registry.Post;
 
 public class Database {
     private static Database instance;
@@ -67,22 +70,9 @@ public class Database {
                     "FOREIGN KEY (id_user) REFERENCES Users(id) ON DELETE CASCADE," +
                     "FOREIGN KEY (id_torrent) REFERENCES Torrents(id) ON DELETE CASCADE)";
             stmt.execute(postsTable);
-
-            populateInitialData();
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());
         }
-    }
-
-    private void populateInitialData() throws SQLException {
-        if (hasData("Users")) {
-            return;
-        }
-
-        insertUser("rzv", "test");
-        insertUser("jon", "foo");
-        // TODO: you should be able to test all commands
-        // without adding new content / users
     }
 
     public HashMap<String, User> getAllUsers() {
@@ -95,7 +85,7 @@ public class Database {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
                 String password = rs.getString("password");
-                User user = new User(name, password);
+                User user = new User(name, password, id);
                 users.put(name, user);
             }
         } catch (SQLException e) {
@@ -112,15 +102,47 @@ public class Database {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
-                String name = rs.getString("name");
-                String password = rs.getString("password");
-                User user = new User(name, password);
-                usersMap.put(name, user);
+                int id_author = rs.getInt("id_user");
+                int id_torrent = rs.getInt("id_torrent");
+                String timestamp = rs.getString("timestamp");
+                // TODO: get user
+                // posts.insert(new Post(id,))
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving all users: " + e.getMessage());
         }
-        return usersMap;
+        return posts;
+    }
+
+    public void insertTorrentFiles(int torrentId, ArrayList<File> files) {
+        for (File file : files) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_TORRENT_FILES)) {
+                pstmt.setString(1, String.valueOf(torrentId));
+                pstmt.setString(2, String.valueOf(file.getId()));
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                System.err.println("Error inserting into TorrentFiles: " + e.getMessage());
+            }
+        }
+    }
+
+    public void insertPost(int authorId, int torrentId) {
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_POST)) {
+            pstmt.setString(1, String.valueOf(authorId));
+            pstmt.setString(2, String.valueOf(torrentId));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error inserting into TorrentFiles: " + e.getMessage());
+        }
+    }
+
+    public void removePost(int id) {
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.REMOVE_POST)) {
+            pstmt.setString(1, String.valueOf(id));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleating a Post " + e.getMessage());
+        }
     }
 
     public int insertUser(String name, String password) {
@@ -154,12 +176,19 @@ public class Database {
         return -1;
     }
 
+    /// files are going to be changed, they will receive the generated
+    /// id from the database
     public void insertFiles(ArrayList<File> files) {
         for (File file : files) {
-            try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_FILE)) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_FILE, Statement.RETURN_GENERATED_KEYS)) {
                 pstmt.setString(1, file.getName());
-                pstmt.setString(2, file.getSize());
+                pstmt.setString(2, String.valueOf(file.getSize()));
                 pstmt.executeUpdate();
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        file.setId(rs.getInt(1));
+                    }
+                }
             } catch (SQLException e) {
                 System.err.println("Error inserting user: " + e.getMessage());
             }

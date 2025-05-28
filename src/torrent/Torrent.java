@@ -16,7 +16,7 @@ public class Torrent extends Decoder {
         files = new ArrayList<>();
         String file = this.next();
         while (!file.equals("EEOF")) {
-            files.add(new File(file.length(), file, file));
+            files.add(new File(file.length(), file, file, -1));
             file = this.next();
         }
     }
