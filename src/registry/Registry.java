@@ -13,17 +13,14 @@ import java.nio.file.*;
 import torrent.Torrent;
 import torrent.File;
 import user.User;
+import database.Database;
 
 public class Registry {
     private Set<Post> posts;
 
     public Registry() {
-        this.posts = new TreeSet<>();
-
-        // TODO: delete after we use a db
-        User jon = new User("Jon", "1234");
-        this.posts.add(new Post(jon, new Torrent("gta6.torrent", "8:gta6.exe10:assets.dll")));
-        this.posts.add(new Post(jon, new Torrent("minecraft.torrent", "12:launcher.exe9:main.java")));
+        Database db = Database.getInstance();
+        this.posts = db.getAllPosts();
     }
 
     public void addPost(User user, String path) {
@@ -31,13 +28,23 @@ public class Registry {
             byte[] bytes = Files.readAllBytes(Paths.get(path));
             String content = new String(bytes, StandardCharsets.UTF_8);
 
+            Database db = Database.getInstance();
             Torrent torrent = new Torrent(path, content);
-            this.posts.add(new Post(user, torrent));
+
+            int id = db.insertTorrent(torrent);
+            if (id == -1) {
+                throw new RuntimeException("Couldn't insert given torrent file!");
+            }
+
+            db.insertFiles(torrent.getFiles());
+            db.insertTorrentFiles(id, torrent.getFiles());
+
+            db.insertPost(new Post(user, torrent));
+            this.posts = db.getAllPosts();
         } catch (IOException e) {
             System.out.println("Couldn't read torrent file!");
             return;
         }
-
     }
 
     public void showPosts() {

@@ -12,7 +12,11 @@ public class Audit {
         this.auditFile = auditFile;
     }
 
-    public void log(String actionName, long timestamp) {
+    public void log(String actionName) {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss-dd.MM.yyyy");
+
+        String timestamp = now.format(formatter);
         String content = String.format("%s, %d", actionName, timestamp);
 
         try (FileWriter fw = new FileWriter(this.auditFile, true);

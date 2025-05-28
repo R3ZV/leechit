@@ -2,6 +2,7 @@ package auth;
 
 import java.util.HashMap;
 import user.User;
+import database.Database;
 
 public class Auth {
     private HashMap<String, User> users;
@@ -9,12 +10,8 @@ public class Auth {
     public Auth() {
         this.users = new HashMap<>();
 
-        // test users
-        User jon = new User("Jon", "1234");
-        User alice = new User("Alice", "foo");
-
-        this.users.put(jon.getUsername(),  jon);
-        this.users.put(alice.getUsername(), alice);
+        Database db = Database.getInstance();
+        this.users = db.getAllUsers();
     }
 
     public boolean isUser(String name, String pass) {
@@ -25,7 +22,9 @@ public class Auth {
     }
 
     public void addUser(String name, String pass) {
-        this.users.put(name, new User(name, pass));
+        Database db = Database.getInstance();
+        db.insertUser(name, pass);
+        this.users = db.getAllUsers();
     }
 
     /// Should only get called if you are sure
