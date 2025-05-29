@@ -1,5 +1,6 @@
 package repl;
 
+import java.sql.*;
 import java.io.Console;
 import java.time.Instant;
 import java.util.Arrays;
@@ -120,14 +121,20 @@ public class Repl implements ReplService {
     }
 
     private void download() {
+        // TODO: downlaod by id
         this.auditManager.log("User started downloading");
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
-        String torrentName = this.commandArgs[0];
-        this.registry.downloadTorrent(torrentName);
+
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.downloadTorrent(torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void upload() {
@@ -156,8 +163,12 @@ public class Repl implements ReplService {
             return;
         }
 
-        String torrentName = this.commandArgs[0];
-        this.registry.displayTorrent(torrentName);
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.displayTorrent(torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void remove() {
@@ -168,8 +179,12 @@ public class Repl implements ReplService {
             return;
         }
 
-        String torrentName = this.commandArgs[0];
-        this.registry.removeTorrentPost(this.user, torrentName);
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.removeTorrentPost(this.user, torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void login() {
@@ -208,9 +223,14 @@ public class Repl implements ReplService {
             System.out.println("Password don't match, try again!");
             return;
         }
-        this.auth.addUser(username, new String(passChars));
-        System.out.println("Account created successfully!");
-        this.auditManager.log("User registered");
+
+        try {
+            this.auth.addUser(username, new String(passChars));
+            System.out.println("Account created successfully!");
+            this.auditManager.log("User registered");
+        } catch (SQLException e) {
+            System.out.println("User already exists");
+        }
     }
 
     private void logout() {

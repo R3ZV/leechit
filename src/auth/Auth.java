@@ -1,5 +1,6 @@
 package auth;
 
+import java.sql.*;
 import java.util.HashMap;
 import user.User;
 import database.Database;
@@ -21,10 +22,14 @@ public class Auth {
         return false;
     }
 
-    public void addUser(String name, String pass) {
+    public void addUser(String name, String pass) throws SQLException {
         Database db = Database.getInstance();
-        db.insertUser(name, pass);
-        this.users = db.getAllUsers();
+        try {
+            db.insertUser(name, pass);
+            this.users = db.getAllUsers();
+        } catch (SQLException e) {
+            throw e;
+        }
     }
 
     /// Should only get called if you are sure

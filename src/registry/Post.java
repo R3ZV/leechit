@@ -18,15 +18,10 @@ public class Post implements Comparable<Post> {
         this.id = id;
         this.torrent = torrent;
         this.timestamp = timestamp;
-
-        // TODO:
-        // LocalDateTime now = LocalDateTime.now();
-        // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss-dd.MM.yyyy");
-        // this.timestamp = now.format(formatter);
     }
 
     public void display() {
-        String fmt = String.format("%-25s %-15s %s", torrent.getName(),  author.getUsername(), this.timestamp);
+        String fmt = String.format("%-10s %-25s %-15s %s", torrent.getId(), torrent.getName(),  author.getUsername(), this.timestamp);
         System.out.println(fmt);
     }
 

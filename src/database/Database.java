@@ -51,7 +51,7 @@ public class Database {
 
             String torrentsTable = "CREATE TABLE IF NOT EXISTS Torrents (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "name TEXT NOT NULL UNIQUE)";
+                    "name TEXT NOT NULL)";
             stmt.execute(torrentsTable);
 
             String torrentsFilesTable = "CREATE TABLE IF NOT EXISTS TorrentFiles (" +
@@ -79,7 +79,7 @@ public class Database {
         HashMap<String, User> users = new HashMap<>();
 
         try (Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(Constants.SELECT_ALL_USERS)) {
+                ResultSet rs = stmt.executeQuery(Constants.SELECT_ALL_USERS)) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -98,20 +98,88 @@ public class Database {
         Set<Post> posts = new HashSet<>();
 
         try (Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(Constants.SELECT_ALL_POSTS)) {
-
+            ResultSet rs = stmt.executeQuery(Constants.SELECT_ALL_POSTS_JOINED)) {
             while (rs.next()) {
-                int id = rs.getInt("id");
-                int id_author = rs.getInt("id_user");
-                int id_torrent = rs.getInt("id_torrent");
+                int postId = rs.getInt("post_id");
                 String timestamp = rs.getString("timestamp");
-                // TODO: get user
-                // posts.insert(new Post(id,))
+
+                int userId = rs.getInt("user_id");
+                String userName = rs.getString("user_name");
+                User author = getUser(userId);
+
+                int torrentId = rs.getInt("torrent_id");
+                String torrentName = rs.getString("torrent_name");
+                Torrent torrent = getTorrent(torrentId);
+
+                posts.add(new Post(author, torrent, timestamp, postId));
             }
         } catch (SQLException e) {
-            System.err.println("Error retrieving all users: " + e.getMessage());
+            System.err.println("Error retrieving all posts: " + e.getMessage());
         }
         return posts;
+    }
+
+    public User getUser(int id) {
+        User user = null;
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.SELECT_USER)) {
+            pstmt.setInt(1, id);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int userId = rs.getInt("id");
+                    String userName = rs.getString("name");
+                    String userPassword = rs.getString("password");
+
+                    user = new User(userName, userPassword, userId);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving user: " + e.getMessage());
+        }
+
+        assert user != null;
+        return user;
+    }
+
+    public Torrent getTorrent(int torrentId) {
+        Torrent torrent = null;
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.SELECT_TORRENT)) {
+            pstmt.setInt(1, torrentId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int id = rs.getInt("id");
+                    String name = rs.getString("name");
+                    ArrayList<File> files = getFilesWithTorrent(id);
+                    torrent = new Torrent(id, name, files);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving torrent with ID " + torrentId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return torrent;
+    }
+
+     public ArrayList<File> getFilesWithTorrent(int torrentId) {
+        ArrayList<File> files = new ArrayList<>();
+
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.SELECT_FILES_BY_TORRENT_ID)) {
+            pstmt.setInt(1, torrentId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int fileId = rs.getInt("file_id");
+                    String fileName = rs.getString("file_name");
+                    int fileSize = rs.getInt("file_size");
+                    files.add(new File(fileSize, fileName, fileName, fileId));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving files for torrent ID " + torrentId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return files;
     }
 
     public void insertTorrentFiles(int torrentId, ArrayList<File> files) {
@@ -136,17 +204,77 @@ public class Database {
         }
     }
 
-    public void removePost(int id) {
-        try (PreparedStatement pstmt = connection.prepareStatement(Constants.REMOVE_POST)) {
-            pstmt.setString(1, String.valueOf(id));
-            pstmt.executeUpdate();
+    // TODO: instead of String.valueOf() change it to set int everywhere
+    public void removePost(int postId) {
+        int idTorrent = -1;
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.DELETE_POST_RETURNING)) {
+            pstmt.setInt(1, postId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    idTorrent = rs.getInt("id_torrent");
+                }
+            }
         } catch (SQLException e) {
-            System.err.println("Error deleating a Post " + e.getMessage());
+            System.err.println("Error deleting post with ID " + postId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        if (idTorrent != -1) {
+            removeTorrent(idTorrent);
         }
     }
 
-    public int insertUser(String name, String password) {
-        try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_USER, Statement.RETURN_GENERATED_KEYS)) {
+    public void removeTorrent(int torrentId) throws RuntimeException {
+        Set<Integer> filesIdToDelete = new HashSet<>();
+        try {
+            String SELECT_FILE_IDS_FOR_TORRENT = "SELECT file_id FROM TorrentFiles WHERE torrent_id = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(SELECT_FILE_IDS_FOR_TORRENT)) {
+                pstmt.setInt(1, torrentId);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        filesIdToDelete.add(rs.getInt("file_id"));
+                    }
+                }
+            }
+
+            String DELETE_TORRENT_SQL = "DELETE FROM Torrents WHERE id = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(DELETE_TORRENT_SQL)) {
+                pstmt.setInt(1, torrentId);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to remove torrent and its files", e);
+        }
+
+        try {
+            removeFiles(filesIdToDelete);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to remove files attached to torrent", e);
+        }
+    }
+
+
+    public void removeFiles(Set<Integer> fileIds) throws SQLException {
+        if (fileIds.isEmpty()) {
+            return;
+        }
+
+        String DELETE_FILE_SQL = "DELETE FROM Files WHERE id = ?";
+
+        for (int fileId : fileIds) {
+            try (PreparedStatement pstmt = connection.prepareStatement(DELETE_FILE_SQL)) {
+                pstmt.setInt(1, fileId);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                throw e;
+            }
+        }
+    }
+
+    public int insertUser(String name, String password) throws SQLException {
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_USER,
+                Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, name);
             pstmt.setString(2, password);
             pstmt.executeUpdate();
@@ -156,13 +284,14 @@ public class Database {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error inserting user: " + e.getMessage());
+            throw e;
         }
         return -1;
     }
 
     public int insertTorrent(Torrent torrent) {
-        try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_TORRENT, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_TORRENT,
+                Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, torrent.getName());
             pstmt.executeUpdate();
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
@@ -180,7 +309,8 @@ public class Database {
     /// id from the database
     public void insertFiles(ArrayList<File> files) {
         for (File file : files) {
-            try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_FILE, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_FILE,
+                    Statement.RETURN_GENERATED_KEYS)) {
                 pstmt.setString(1, file.getName());
                 pstmt.setString(2, String.valueOf(file.getSize()));
                 pstmt.executeUpdate();

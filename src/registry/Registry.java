@@ -51,7 +51,7 @@ public class Registry {
     }
 
     public void showPosts() {
-        System.out.println(String.format("%-25s %-15s %s", "Torrent name", "Author", "Timestamp"));
+        System.out.println(String.format("%-10s %-25s %-15s %s", "ID", "Torrent name", "Author", "Timestamp"));
         System.out.println("");
 
         for (Post post : this.posts) {
@@ -59,41 +59,41 @@ public class Registry {
         }
     }
 
-    public void displayTorrent(String name) {
+    public void displayTorrent(int torrentId) {
         for (Post post : this.posts) {
-            if (post.getName().equals(name)) {
+            if (post.getTorrent().getId() == torrentId) {
                 post.torrentContents();
                 return;
             }
         }
-        System.out.println("Couldn't find: " + name);
+        System.out.println("Couldn't find torrnet file with id: " + torrentId);
     }
 
-    public void removeTorrentPost(User user, String torrentName) {
+    public void removeTorrentPost(User user, int torrentId) {
         for (Post post : posts) {
-            if (post.getName().equals(torrentName)) {
+            if (post.getTorrent().getId() == torrentId) {
                 if (!post.getAuthor().equals(user.getUsername())) {
-                    System.out.println("You don't own that torrent!");
-                } else {
-                    Database db = Database.getInstance();
-                    db.removePost(post.getId());
-                    this.posts = db.getAllPosts();
-                    System.out.println("Successfully removed torrent!");
+                    continue;
                 }
+
+                Database db = Database.getInstance();
+                db.removePost(post.getId());
+                this.posts = db.getAllPosts();
+                System.out.println("Successfully removed torrent!");
                 return;
             }
         }
-        System.out.println("Couldn't find: " + torrentName);
+        System.out.println("You don't own any torrent with that id!");
     }
 
-    public void downloadTorrent(String name) {
+    public void downloadTorrent(int torrentId) {
         for (Post post : this.posts) {
-            if (post.getName().equals(name)) {
+            if (post.getTorrent().getId() == torrentId) {
                 this.download(post);
                 return;
             }
         }
-        System.out.println("Couldn't find: " + name);
+        System.out.println("Couldn't find torrent file with id: " + torrentId);
     }
 
     private void download(Post post) {
