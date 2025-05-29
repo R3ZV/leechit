@@ -13,17 +13,14 @@ import java.nio.file.*;
 import torrent.Torrent;
 import torrent.File;
 import user.User;
+import database.Database;
 
 public class Registry {
     private Set<Post> posts;
 
     public Registry() {
-        this.posts = new TreeSet<>();
-
-        // TODO: delete after we use a db
-        User jon = new User("Jon", "1234");
-        this.posts.add(new Post(jon, new Torrent("gta6.torrent", "8:gta6.exe10:assets.dll")));
-        this.posts.add(new Post(jon, new Torrent("minecraft.torrent", "12:launcher.exe9:main.java")));
+        Database db = Database.getInstance();
+        this.posts = db.getAllPosts();
     }
 
     public void addPost(User user, String path) {
@@ -31,17 +28,30 @@ public class Registry {
             byte[] bytes = Files.readAllBytes(Paths.get(path));
             String content = new String(bytes, StandardCharsets.UTF_8);
 
+            Database db = Database.getInstance();
             Torrent torrent = new Torrent(path, content);
-            this.posts.add(new Post(user, torrent));
+
+            int torrentId = db.insertTorrent(torrent);
+            if (torrentId == -1) {
+                throw new RuntimeException("Couldn't insert given torrent file!");
+            }
+
+            ArrayList<File> files = torrent.getFiles();
+            db.insertFiles(files);
+            // after insert files should be changed to have their generated ids
+
+            db.insertTorrentFiles(torrentId, files);
+
+            db.insertPost(user.getId(), torrentId);
+            this.posts = db.getAllPosts();
         } catch (IOException e) {
             System.out.println("Couldn't read torrent file!");
             return;
         }
-
     }
 
     public void showPosts() {
-        System.out.println(String.format("%-25s %-15s %s", "Torrent name", "Author", "Timestamp"));
+        System.out.println(String.format("%-10s %-25s %-15s %s", "ID", "Torrent name", "Author", "Timestamp"));
         System.out.println("");
 
         for (Post post : this.posts) {
@@ -49,39 +59,41 @@ public class Registry {
         }
     }
 
-    public void displayTorrent(String name) {
+    public void displayTorrent(int torrentId) {
         for (Post post : this.posts) {
-            if (post.getName().equals(name)) {
+            if (post.getTorrent().getId() == torrentId) {
                 post.torrentContents();
                 return;
             }
         }
-        System.out.println("Couldn't find: " + name);
+        System.out.println("Couldn't find torrnet file with id: " + torrentId);
     }
 
-    public void removeTorrent(User user, String torrentName) {
+    public void removeTorrentPost(User user, int torrentId) {
         for (Post post : posts) {
-            if (post.getName().equals(torrentName)) {
+            if (post.getTorrent().getId() == torrentId) {
                 if (!post.getAuthor().equals(user.getUsername())) {
-                    System.out.println("You don't own that torrent!");
-                } else {
-                    posts.remove(post);
-                    System.out.println("Successfully removed torrent!");
+                    continue;
                 }
+
+                Database db = Database.getInstance();
+                db.removePost(post.getId());
+                this.posts = db.getAllPosts();
+                System.out.println("Successfully removed torrent!");
                 return;
             }
         }
-        System.out.println("Couldn't find: " + torrentName);
+        System.out.println("You don't own any torrent with that id!");
     }
 
-    public void downloadTorrent(String name) {
+    public void downloadTorrent(int torrentId) {
         for (Post post : this.posts) {
-            if (post.getName().equals(name)) {
+            if (post.getTorrent().getId() == torrentId) {
                 this.download(post);
                 return;
             }
         }
-        System.out.println("Couldn't find: " + name);
+        System.out.println("Couldn't find torrent file with id: " + torrentId);
     }
 
     private void download(Post post) {

@@ -1,5 +1,6 @@
 package repl;
 
+import java.sql.*;
 import java.io.Console;
 import java.time.Instant;
 import java.util.Arrays;
@@ -114,67 +115,81 @@ public class Repl implements ReplService {
     }
 
     private void exit() {
-        this.auditManager.log("User exited", Instant.now().toEpochMilli());
+        this.auditManager.log("User exited");
         this.running = false;
         System.out.println("Thank you for using Leech it!");
     }
 
     private void download() {
-        this.auditManager.log("User started downloading", Instant.now().toEpochMilli());
+        // TODO: downlaod by id
+        this.auditManager.log("User started downloading");
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
-        String torrentName = this.commandArgs[0];
-        this.registry.downloadTorrent(torrentName);
+
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.downloadTorrent(torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void upload() {
-        this.auditManager.log("User uploaded", Instant.now().toEpochMilli());
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
 
+        this.auditManager.log("User uploaded");
         String filePath = this.commandArgs[0];
         System.out.println(String.format("Uploading '%s'...", filePath));
         this.registry.addPost(this.user, filePath);
     }
 
     private void registry() {
-        this.auditManager.log("User logged the registry", Instant.now().toEpochMilli());
+        this.auditManager.log("User logged the registry");
         this.registry.showPosts();
     }
 
     private void inspect() {
-        this.auditManager.log("User inspected the registry", Instant.now().toEpochMilli());
+        this.auditManager.log("User inspected the registry");
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
 
-        String torrentName = this.commandArgs[0];
-        this.registry.displayTorrent(torrentName);
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.displayTorrent(torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void remove() {
-        this.auditManager.log("User removed from the registry", Instant.now().toEpochMilli());
+        this.auditManager.log("User removed from the registry");
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
             System.out.println("Type 'help' to learn more!");
             return;
         }
 
-        String torrentName = this.commandArgs[0];
-        this.registry.removeTorrent(this.user, torrentName);
+        try {
+            int torrentId = Integer.parseInt(this.commandArgs[0]);
+            this.registry.removeTorrentPost(this.user, torrentId);
+        } catch (NumberFormatException e) {
+            System.out.println("Parameter should be a valid number!");
+        }
     }
 
     private void login() {
         if (this.user != null) {
-            this.auditManager.log("User tried to log in but is already logged in", Instant.now().toEpochMilli());
+            this.auditManager.log("User tried to log in but is already logged in");
             System.out.println("You are already logged in!");
             return;
         }
@@ -186,16 +201,16 @@ public class Repl implements ReplService {
         if (this.auth.isUser(username, password)) {
             this.user = this.auth.getUser(username);
             System.out.println("Logged in successfully!");
-            this.auditManager.log("User logged in", Instant.now().toEpochMilli());
+            this.auditManager.log("User logged in");
         } else {
-            this.auditManager.log("User failed to log in", Instant.now().toEpochMilli());
+            this.auditManager.log("User failed to log in");
             System.out.println("Incorrect username / password!");
         }
     }
 
     private void register() {
         if (this.user != null) {
-            this.auditManager.log("User tried to register but is already logged in", Instant.now().toEpochMilli());
+            this.auditManager.log("User tried to register but is already logged in");
             System.out.println("You are already logged in!");
             return;
         }
@@ -204,22 +219,27 @@ public class Repl implements ReplService {
         char[] passChars = this.console.readPassword("Password: ");
         char[] confirmPassChars = this.console.readPassword("Confirm password: ");
         if (!Arrays.equals(passChars, confirmPassChars)) {
-            this.auditManager.log("User registered with wrong confirm pass", Instant.now().toEpochMilli());
+            this.auditManager.log("User registered with wrong confirm pass");
             System.out.println("Password don't match, try again!");
             return;
         }
-        this.auth.addUser(username, new String(passChars));
-        System.out.println("Account created successfully!");
-        this.auditManager.log("User registered", Instant.now().toEpochMilli());
+
+        try {
+            this.auth.addUser(username, new String(passChars));
+            System.out.println("Account created successfully!");
+            this.auditManager.log("User registered");
+        } catch (SQLException e) {
+            System.out.println("User already exists");
+        }
     }
 
     private void logout() {
-        this.auditManager.log("User logged out", Instant.now().toEpochMilli());
+        this.auditManager.log("User logged out");
         this.user = null;
     }
 
     private void help() {
-        this.auditManager.log("User asked for help", Instant.now().toEpochMilli());
+        this.auditManager.log("User asked for help");
 
         System.out.println("REPL commands:");
         System.out.println("  help                  - prints this message");

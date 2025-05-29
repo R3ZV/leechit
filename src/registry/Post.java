@@ -11,18 +11,17 @@ public class Post implements Comparable<Post> {
     private User author;
     private Torrent torrent;
     private String timestamp;
+    private int id;
 
-    public Post(User author, Torrent torrent) {
+    public Post(User author, Torrent torrent, String timestamp, int id) {
         this.author = author;
+        this.id = id;
         this.torrent = torrent;
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss-dd.MM.yyyy");
-        this.timestamp = now.format(formatter);
+        this.timestamp = timestamp;
     }
 
     public void display() {
-        String fmt = String.format("%-25s %-15s %s", torrent.getName(),  author.getUsername(), this.timestamp);
+        String fmt = String.format("%-10s %-25s %-15s %s", torrent.getId(), torrent.getName(),  author.getUsername(), this.timestamp);
         System.out.println(fmt);
     }
 
@@ -44,6 +43,10 @@ public class Post implements Comparable<Post> {
 
     public String getName() {
         return this.torrent.getName();
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public String getTimestamp() {

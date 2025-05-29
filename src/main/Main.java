@@ -1,3 +1,5 @@
+package main;
+
 import repl.Repl;
 
 public  class Main {

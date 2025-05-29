@@ -1,5 +1,16 @@
+.PHONY: all build run clean
+
+CLASSPATH := out:lib/sqlite-jdbc.jar
+
+MAIN_CLASS := main.Main
+
+all: build run
+
 run: build
-	java -cp out Main .:lib/sqlite-jdbc.jar 
+	@echo "Running Java application..."
+	java -cp $(CLASSPATH) $(MAIN_CLASS)
 
 build:
-	javac -d out $(shell find src -name "*.java") || exit 1
+	@echo "Compiling Java source files..."
+	mkdir -p out
+	javac -d out -cp lib/sqlite-jdbc.jar $(shell find src -name "*.java")
