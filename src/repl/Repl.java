@@ -219,7 +219,7 @@ public class Repl implements ReplService {
         char[] confirmPassChars = this.console.readPassword("Confirm password: ");
         if (!Arrays.equals(passChars, confirmPassChars)) {
             this.auditManager.log("User registered with wrong confirm pass");
-            System.out.println("Password don't match, try again!");
+            System.out.println("Passwords don't match, try again!");
             return;
         }
 

@@ -295,7 +295,7 @@ public class Database {
     private boolean hasData(String tableName) throws SQLException {
         try (PreparedStatement pstmt = connection.prepareStatement(Constants.CHECK_DATA)) {
             pstmt.setString(1, tableName);
-            ResultSet rs = stmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery();
             return rs.next() && rs.getInt(1) > 0;
         } catch (SQLException e) {
             System.err.println("Error checking if table has data: " + e.getMessage());
