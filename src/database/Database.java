@@ -157,8 +157,8 @@ public class Database {
     public void insertTorrentFiles(int torrentId, ArrayList<File> files) {
         for (File file : files) {
             try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_TORRENT_FILES)) {
-                pstmt.setString(1, String.valueOf(torrentId));
-                pstmt.setString(2, String.valueOf(file.getId()));
+                pstmt.setInt(1, torrentId);
+                pstmt.setInt(2, file.getId());
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 System.err.println("Error inserting into TorrentFiles: " + e.getMessage());
@@ -168,15 +168,14 @@ public class Database {
 
     public void insertPost(int authorId, int torrentId) {
         try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_POST)) {
-            pstmt.setString(1, String.valueOf(authorId));
-            pstmt.setString(2, String.valueOf(torrentId));
+            pstmt.setInt(1, authorId);
+            pstmt.setInt(2, torrentId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error inserting into TorrentFiles: " + e.getMessage());
         }
     }
 
-    // TODO: instead of String.valueOf() change it to set int everywhere
     public void removePost(int postId) {
         int idTorrent = -1;
         try (PreparedStatement pstmt = connection.prepareStatement(Constants.DELETE_POST_RETURNING)) {
@@ -280,7 +279,7 @@ public class Database {
             try (PreparedStatement pstmt = connection.prepareStatement(Constants.INSERT_FILE,
                     Statement.RETURN_GENERATED_KEYS)) {
                 pstmt.setString(1, file.getName());
-                pstmt.setString(2, String.valueOf(file.getSize()));
+                pstmt.setInt(2, file.getSize());
                 pstmt.executeUpdate();
                 try (ResultSet rs = pstmt.getGeneratedKeys()) {
                     if (rs.next()) {

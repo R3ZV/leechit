@@ -121,7 +121,6 @@ public class Repl implements ReplService {
     }
 
     private void download() {
-        // TODO: downlaod by id
         this.auditManager.log("User started downloading");
         if (this.commandArgs.length < 1) {
             System.out.println("Invalid number of arguments!");
