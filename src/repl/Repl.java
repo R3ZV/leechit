@@ -249,12 +249,12 @@ public class Repl implements ReplService {
         if (this.user != null) {
             System.out.println("");
             System.out.println("USER commands:");
-            System.out.println("  download <torrent>    - download a torrent from registry");
-            System.out.println("  upload <torrent>      - upload a torrent to the registry");
-            System.out.println("  inspect <torrent>     - inspect what a torrent contains");
-            System.out.println("  remove <torrent>      - removes torrent form registry");
-            System.out.println("  registry              - print available files in the registry");
-            System.out.println("  logout                - logs out the user if logged in");
+            System.out.println("  download <id torrent>     - download a torrent from registry");
+            System.out.println("  upload <id torrent>       - upload a torrent to the registry");
+            System.out.println("  inspect <id torrent>      - inspect what a torrent contains");
+            System.out.println("  remove <id torrent>       - removes torrent form registry");
+            System.out.println("  registry                  - print available files in the registry");
+            System.out.println("  logout                    - logs out the user if logged in");
         }
     }
 }
