@@ -37,39 +37,11 @@ public class Database {
 
     private void initDatabase() {
         try (Statement stmt = connection.createStatement()) {
-            String userTable = "CREATE TABLE IF NOT EXISTS Users (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "name TEXT NOT NULL UNIQUE," +
-                    "password TEXT NOT NULL)";
-            stmt.execute(userTable);
-
-            String filesTable = "CREATE TABLE IF NOT EXISTS Files (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "name TEXT NOT NULL," +
-                    "size INTEGER NOT NULL)";
-            stmt.execute(filesTable);
-
-            String torrentsTable = "CREATE TABLE IF NOT EXISTS Torrents (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "name TEXT NOT NULL)";
-            stmt.execute(torrentsTable);
-
-            String torrentsFilesTable = "CREATE TABLE IF NOT EXISTS TorrentFiles (" +
-                    "torrent_id INTEGER NOT NULL," +
-                    "file_id INTEGER NOT NULL," +
-                    "PRIMARY KEY (torrent_id, file_id)," +
-                    "FOREIGN KEY (torrent_id) REFERENCES Torrents(id) ON DELETE CASCADE," +
-                    "FOREIGN KEY (file_id) REFERENCES Files(id) ON DELETE CASCADE)";
-            stmt.execute(torrentsFilesTable);
-
-            String postsTable = "CREATE TABLE IF NOT EXISTS Posts (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "id_user INTEGER NOT NULL," +
-                    "id_torrent INTEGER NOT NULL," +
-                    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP," +
-                    "FOREIGN KEY (id_user) REFERENCES Users(id) ON DELETE CASCADE," +
-                    "FOREIGN KEY (id_torrent) REFERENCES Torrents(id) ON DELETE CASCADE)";
-            stmt.execute(postsTable);
+            stmt.execute(Constants.CREATE_USER_TABLE);
+            stmt.execute(Constants.CREATE_FILES_TABLE);
+            stmt.execute(Constants.CREATE_TORRENTS_TABLE);
+            stmt.execute(Constants.CREATE_TORRENTSFILES_TABLE);
+            stmt.execute(Constants.CREATE_POSTS_TABLE);
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());
         }
@@ -228,8 +200,7 @@ public class Database {
     public void removeTorrent(int torrentId) throws RuntimeException {
         Set<Integer> filesIdToDelete = new HashSet<>();
         try {
-            String SELECT_FILE_IDS_FOR_TORRENT = "SELECT file_id FROM TorrentFiles WHERE torrent_id = ?";
-            try (PreparedStatement pstmt = connection.prepareStatement(SELECT_FILE_IDS_FOR_TORRENT)) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.SELECT_FILE_IDS_FOR_TORRENT)) {
                 pstmt.setInt(1, torrentId);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
@@ -238,8 +209,7 @@ public class Database {
                 }
             }
 
-            String DELETE_TORRENT_SQL = "DELETE FROM Torrents WHERE id = ?";
-            try (PreparedStatement pstmt = connection.prepareStatement(DELETE_TORRENT_SQL)) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.DELETE_TORRENT_SQL)) {
                 pstmt.setInt(1, torrentId);
                 pstmt.executeUpdate();
             }
@@ -260,10 +230,8 @@ public class Database {
             return;
         }
 
-        String DELETE_FILE_SQL = "DELETE FROM Files WHERE id = ?";
-
         for (int fileId : fileIds) {
-            try (PreparedStatement pstmt = connection.prepareStatement(DELETE_FILE_SQL)) {
+            try (PreparedStatement pstmt = connection.prepareStatement(Constants.DELETE_FILE_SQL)) {
                 pstmt.setInt(1, fileId);
                 pstmt.executeUpdate();
             } catch (SQLException e) {
@@ -326,9 +294,9 @@ public class Database {
     }
 
     private boolean hasData(String tableName) throws SQLException {
-        try (Statement stmt = connection.createStatement()) {
-            String sql = "SELECT COUNT(*) FROM " + tableName;
-            ResultSet rs = stmt.executeQuery(sql);
+        try (PreparedStatement pstmt = connection.prepareStatement(Constants.CHECK_DATA)) {
+            pstmt.setString(1, tableName);
+            ResultSet rs = stmt.executeQuery();
             return rs.next() && rs.getInt(1) > 0;
         } catch (SQLException e) {
             System.err.println("Error checking if table has data: " + e.getMessage());

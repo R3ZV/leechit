@@ -17,6 +17,7 @@ public class Constants {
                                             "JOIN TorrentFiles tf ON f.id = tf.file_id " +
                                             "WHERE tf.torrent_id = ?";
 
+    public static final String SELECT_FILE_IDS_FOR_TORRENT = "SELECT file_id FROM TorrentFiles WHERE torrent_id = ?";
     public static final String SELECT_TORRENT = "SELECT * FROM Torrents where id=?";
     public static final String SELECT_USER = "SELECT * FROM Users WHERE id=?";
     public static final String SELECT_ALL_USERS = "SELECT * FROM Users";
@@ -34,5 +35,37 @@ public class Constants {
     public static final String DELETE_POST_RETURNING = "DELETE FROM Posts WHERE id = ?" +
                                                        "RETURNING id_torrent";
 
-    // TODO:: make sure every query is in Constants package
+    public static final String DELETE_TORRENT_SQL = "DELETE FROM Torrents WHERE id = ?";
+    public static final String DELETE_FILE_SQL = "DELETE FROM Files WHERE id = ?";
+    public static final String CHECK_DATA = "SELECT COUNT(*) FROM ?";
+
+    public static final String CREATE_USER_TABLE = "CREATE TABLE IF NOT EXISTS Users (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "name TEXT NOT NULL UNIQUE," +
+                    "password TEXT NOT NULL)";
+
+    public static final String CREATE_FILES_TABLE = "CREATE TABLE IF NOT EXISTS Files (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "name TEXT NOT NULL," +
+                    "size INTEGER NOT NULL)";
+
+
+    public static final String CREATE_TORRENTS_TABLE = "CREATE TABLE IF NOT EXISTS Torrents (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "name TEXT NOT NULL)";
+
+    public static final String CREATE_TORRENTSFILES_TABLE = "CREATE TABLE IF NOT EXISTS TorrentFiles (" +
+                    "torrent_id INTEGER NOT NULL," +
+                    "file_id INTEGER NOT NULL," +
+                    "PRIMARY KEY (torrent_id, file_id)," +
+                    "FOREIGN KEY (torrent_id) REFERENCES Torrents(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY (file_id) REFERENCES Files(id) ON DELETE CASCADE)";
+
+    public static final String CREATE_POSTS_TABLE = "CREATE TABLE IF NOT EXISTS Posts (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "id_user INTEGER NOT NULL," +
+                    "id_torrent INTEGER NOT NULL," +
+                    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY (id_user) REFERENCES Users(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY (id_torrent) REFERENCES Torrents(id) ON DELETE CASCADE)";
 }
